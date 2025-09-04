@@ -1,0 +1,12 @@
+spring:
+    application:
+        name: Transaction Propagation
+    datasource:
+        password: admin
+        url: jdbc:mysql://localhost:3306/login_system
+        username: root
+        driver-class-name: com.mysql.cj.jdbc.Driver
+    jpa:
+        hibernate:
+            ddl-auto: update
+
