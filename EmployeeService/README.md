@@ -1,98 +1,69 @@
-Spring Data JPA Transaction Internal Working
 
-1. Transactions Without @Transactional
 
-Without a @Transactional annotation, JPA will trigger individual transactions for every database interaction.
+Interesting Fact! (@RequestParam vs @ParamVariable)
 
-⚠️ If an error occurs in between, the previous transaction will not be rolled back, which can leave the system in an
-inconsistent state.
+Spring: @PathVariable vs @RequestParam
 
-Example transaction logs:
+1. @RequestParam
 
-Txn Logger --> New transaction started (propagation=0) (name=SimpleJpaRepository.findById)
-Txn Logger --> Transaction committed (name=SimpleJpaRepository.findById)
+   Extracts key-value pairs from the query parameters of the URL.
 
-Txn Logger --> New transaction started (propagation=0) (name=SimpleJpaRepository.save)
-Txn Logger --> Transaction committed (name=SimpleJpaRepository.save)
+   RequestParam are used to access the values from query params of the URL
 
-Txn Logger --> New transaction started (propagation=0) (name=SimpleJpaRepository.findById)
-Txn Logger --> Transaction committed (name=SimpleJpaRepository.findById)
+   Can be made optional using required = false.
+   Multiple @RequestParams can be used in a single request (e.g., pagination, filtering, sorting).
 
-Txn Logger --> New transaction started (propagation=0) (name=SimpleJpaRepository.save)
-Txn Logger --> Transaction committed (name=SimpleJpaRepository.save)
+   /products?page=2&size=20
 
-2. Transaction Propagation
+   Example Code:
+   @GetMapping("/products")
+   public List<Product> getProducts(
+   @RequestParam(required = false, defaultValue = "0") int page,
+   @RequestParam(required = false, defaultValue = "10") int size) {
+   // logic here
+   }
 
-Propagation defines the behavior of a transactional method when it is called inside an existing transaction.
+4. @PathVariable
 
-a. REQUIRED (default)
+   Extracts values directly from the URI path.
 
-Joins the existing transaction if available.
+   Typically used for identifiers that uniquely locate a resource.
 
-If none exists, a new transaction will be created.
+   Values are mandatory by default.
 
-Txn Logger --> New transaction started (propagation=0) (name=WalletService.transfer)
-Txn Logger --> Transaction committed (name=WalletService.transfer)
+   Example URL:
 
-b. REQUIRES_NEW
+   /products/42
 
-Always creates a new transaction, even if one already exists.
+   Example Code:
 
-The existing transaction is suspended until the new one completes.
+   @GetMapping("/products/{id}")
+   public Product getProduct(@PathVariable("id") Long productId) {
+   // logic here
+   }
 
-Txn Logger --> New transaction started (propagation=0) (name=WalletService.transfer)
-Txn Logger --> New transaction started (propagation=3) (name=TransactionService.debit)
-Txn Logger --> Transaction committed (name=TransactionService.debit)
-Txn Logger --> Transaction committed (name=WalletService.transfer)
+   Spring Boot allows both @RequestParam and @PathVariable for most use cases
+   
+   Certain rules and norms are there to keep our API clean, consistent and maintainable
+   
+   PathVariable are used to access the values directly from the path variable of the URL
+   
+   @PathVariable are used for identifiers that uniquely locate a resource
 
-c. MANDATORY
+5. Key Differences
+   | Feature     | `@PathVariable`                   | `@RequestParam`                       |
+   | ----------- | --------------------------------- | ------------------------------------- |
+   | Source      | Path segment of the URI           | Query string parameters               |
+   | Usage       | Identifiers, resource locators    | Filters, sorting, pagination, options |
+   | Optional?   | No (by default, must be provided) | Yes (can set `required = false`)      |
+   | Example URL | `/products/42`                    | `/products?page=2&size=20`            |
 
-Requires an existing transaction.
+6. Best Practices
 
-If no transaction exists, an exception will be thrown.
+   Use @PathVariable for required values that define the resource (e.g., IDs).
 
-Example:
+   Use @RequestParam for optional values such as filters, pagination, or search criteria.
 
-Transfer failed: No existing transaction found for transaction marked with propagation 'MANDATORY'
+   Keeping a clean separation improves API readability and maintainability.
 
-org.springframework.transaction.IllegalTransactionStateException:
-No existing transaction found for transaction marked with propagation 'MANDATORY'
 
-d. NEVER
-
-Must not run within a transaction.
-
-If a transaction exists, an exception will be thrown.
-
-Example:
-
-Txn Logger --> New transaction started (propagation=0) (name=WalletService.transfer)
-Txn Logger --> Transaction rolled back (name=WalletService.transfer)
-
-Transfer failed: Existing transaction found for transaction marked with propagation 'NEVER'
-
-e. SUPPORTS
-
-Joins the existing transaction if one exists.
-
-Runs without a transaction if none is present.
-
-f. NOT_SUPPORTED
-
-Suspends the existing transaction if one exists.
-
-Runs without creating a new transaction.
-
-Summary
-
-REQUIRED → Joins or creates a transaction (default).
-
-REQUIRES_NEW → Always creates a new transaction.
-
-MANDATORY → Must have an existing transaction.
-
-NEVER → Must not have a transaction.
-
-SUPPORTS → Uses transaction if available, else runs without one.
-
-NOT_SUPPORTED → Suspends existing transaction, runs without one.
