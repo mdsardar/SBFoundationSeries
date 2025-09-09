@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>curious.sprinbootJPAseries.learn</groupId>
-	<artifactId>TransactionPropagation</artifactId>
+	<artifactId>EmployeeService</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>war</packaging>
-	<name>Transaction Propagation</name>
+	<name>Employee Service</name>
 	<description>Brush up Spring Boot</description>
 	<url/>
 	<licenses>
